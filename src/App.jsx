@@ -8,11 +8,12 @@ import About from './pages/About'
 import MyProfile from './pages/MyProfile'
 import MyAppointments from './pages/MyAppointments'
 import Appointments from './pages/Appointments'
+import MyFiles from './pages/MyFiles'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
-import AppContextProvider from "./context/Context";
+import AppContextProvider from "./context/context";
 
 
 export const App = () => {
@@ -31,6 +32,7 @@ export const App = () => {
         <Route path="/mes-rendez-vous" element={<MyAppointments />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/rendez-vous/:docId" element={<Appointments />} />
+        <Route path="/mon-dossier" element={<MyFiles />} />
       </Routes>
       <Footer/>
     </AppContextProvider>

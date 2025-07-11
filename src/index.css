@@ -15,6 +15,13 @@
   @apply hidden
 }
 
+.nav-item {
+  @apply py-1 hover:text-indigo-600 transition-colors;
+}
+.dropdown-item {
+  @apply px-3 py-2 rounded hover:bg-gray-100 cursor-pointer transition;
+}
+
 @media (max-width: 740px) {
   .active p{
     @apply text-white bg-primary

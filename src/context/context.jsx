@@ -11,6 +11,7 @@ const AppContextProvider = (props) => {
   const [doctors, setDoctors] = useState([]);
   const [token,setToken] = useState(localStorage.getItem('token')?localStorage.getItem('token'): false)
   const [userData, setUserData] = useState(false)
+  const [myMedicalFiles, setMyMedicalFiles] = useState([]);
   console.log("Doctors data:", doctors);
 
 
@@ -32,7 +33,7 @@ const AppContextProvider = (props) => {
   const loadUserProfileData = async () => {
     try {
       const { data } = await axios.get(backendUrl + '/api/user/get-profile', {
-        headers: { Authorization: `Bearer ${token}` }, // Utilisez le bon format d'en-tête
+        headers: { Authorization: `Bearer ${token}` },
       });      
       if (data.success) {
         setUserData(data.userData)
@@ -45,16 +46,34 @@ const AppContextProvider = (props) => {
     }
   }
 
+  const getMyMedicalFiles = async () => {
+    try {
+      const { data } = await axios.get(
+        backendUrl + '/api/user/my-files',
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (data.success) {
+        setMyMedicalFiles(data.files);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      console.error("❌ Erreur récupération fichiers patient :", error);
+      toast.error(error.message);
+    }
+  };
+
   const value = {
     doctors, getDoctorsData,
     monnaie,
     token,setToken,
     backendUrl,
     userData, setUserData,
-    loadUserProfileData
+    loadUserProfileData,
+    myMedicalFiles, setMyMedicalFiles,
+    getMyMedicalFiles
   };
 
-  // Ajoutez un tableau de dépendances vide pour que `useEffect` ne s'exécute qu'une fois
   useEffect(() => {
     getDoctorsData();
   }, []);

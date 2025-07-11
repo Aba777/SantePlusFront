@@ -121,7 +121,7 @@ const MyAppointments = () => {
           >
             <div>
               <img
-                className="w-32 bg-indigo-50"
+                className="w-32 bg-primary"
                 src={`http://localhost:4003${item.docData.image}`}
                 alt=""
               />
@@ -143,13 +143,28 @@ const MyAppointments = () => {
             </div>
             <div></div>
             <div className="flex flex-col gap-2 justify-end">
-              {!item.cancelled && !item.payment && (
-                <button
-                  onClick={() => handlePayment(item._id)}
-                  className="text-sm text-stone-500 text-center sm:min-w-48 py-2 border rounded hover:bg-green-500 hover:text-white transition-all duration-300"
-                >
-                  Payer en ligne
-                </button>
+              {!item.cancelled && !item.payment && !item.isCompleted && (
+                <div className="relative inline-block group sm:min-w-48 w-full">
+                  <button
+                    onClick={() => handlePayment(item._id)}
+                    className="w-full text-sm text-stone-500 text-center py-2 border rounded
+                   hover:bg-green-500 hover:text-white transition-colors duration-300"
+                  >
+                    Payer en ligne
+                  </button>
+
+                  {/* Bulle des frais qui apparaît au hover, juste au-dessus */}
+                  <div
+                    className="absolute left-0 bottom-full mb-2 w-full
+                   bg-green-50 text-green-800 text-sm font-semibold
+                   py-2 rounded border border-green-200
+                   opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0
+                   pointer-events-none
+                   transition-all duration-300 ease-in-out text-center"
+                  >
+                    Frais : {item.amount} Fcfa
+                  </div>
+                </div>
               )}
 
               {item.payment && (
@@ -158,7 +173,7 @@ const MyAppointments = () => {
                 </button>
               )}
 
-              {!item.cancelled && !item.payment && (
+              {!item.cancelled && !item.payment && !item.isCompleted && (
                 <button
                   onClick={() => cancelAppointment(item._id)}
                   className="text-sm text-stone-500 text-center sm:min-w-48 py-2 border rounded hover:bg-red-500 hover:text-white transition-all duration-300"
@@ -166,9 +181,14 @@ const MyAppointments = () => {
                   Annuler rendez-vous
                 </button>
               )}
-              {item.cancelled && (
+              {item.cancelled && !item.isCompleted && (
                 <button className="sm:min-w-48 py-2 border border-red-500 rounded text-red-500">
                   Rendez-vous annuler
+                </button>
+              )}
+              {item.isCompleted && (
+                <button className="sm:min-w-48 py-2 border border-green-500 rounded text-green-500">
+                  Rendez-vous Effectué
                 </button>
               )}
             </div>
