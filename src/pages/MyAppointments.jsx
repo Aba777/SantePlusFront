@@ -101,6 +101,31 @@ const MyAppointments = () => {
     }
   };
 
+  const respondToAlternativeSlot = async (appointmentId, response) => {
+    try {
+      const { data } = await axios.post(
+        backendUrl + "/api/user/respond-alternative-slot",
+        { appointmentId, response },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (data.success) {
+        toast.success(data.message);
+        getUserAppointments();
+        getDoctorsData();
+
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Erreur lors de la réponse au créneau alternatif.");
+    }
+  };
+
   // Exécution de la fonction dans useEffect
   useEffect(() => {
     if (token) {
@@ -140,6 +165,18 @@ const MyAppointments = () => {
                 </span>{" "}
                 {slotDateFormat(item.slotDate)} | {item.slotTime}
               </p>
+              
+              {/* Affichage des créneaux alternatifs proposés */}
+              {item.alternativeSlot && item.alternativeSlot.status === 'pending' && (
+                <div className="mt-2 p-2 bg-orange-50 border border-orange-200 rounded">
+                  <p className="text-xs font-medium text-orange-800 mb-1">
+                    🔄 Nouveau créneau proposé :
+                  </p>
+                  <p className="text-xs text-orange-700">
+                    {slotDateFormat(item.alternativeSlot.slotDate)} | {item.alternativeSlot.slotTime}
+                  </p>
+                </div>
+              )}
             </div>
             <div></div>
             <div className="flex flex-col gap-2 justify-end">
@@ -171,6 +208,31 @@ const MyAppointments = () => {
                 <button className="sm:min-w-48 py-2 border border-green-500 rounded text-green-500">
                   Payé
                 </button>
+              )}
+
+              {/* Boutons pour répondre aux créneaux alternatifs */}
+              {item.alternativeSlot && item.alternativeSlot.status === 'pending' && !item.cancelled && !item.isConfirmed && (
+                <div className="flex gap-2 sm:min-w-48">
+                  <button
+                    onClick={() => respondToAlternativeSlot(item._id, 'accepted')}
+                    className="flex-1 text-sm bg-green-600 text-white py-2 px-3 rounded hover:bg-green-700 transition-colors"
+                  >
+                    Accepter
+                  </button>
+                  <button
+                    onClick={() => respondToAlternativeSlot(item._id, 'rejected')}
+                    className="flex-1 text-sm bg-red-600 text-white py-2 px-3 rounded hover:bg-red-700 transition-colors"
+                  >
+                    Refuser
+                  </button>
+                </div>
+              )}
+
+              {/* Message si le médecin a confirmé le rendez-vous */}
+              {item.alternativeSlot && item.alternativeSlot.status === 'pending' && item.isConfirmed && (
+                <div className="sm:min-w-48 py-2 px-3 bg-gray-100 text-gray-600 text-sm rounded text-center">
+                  Rendez-vous confirmé par le médecin
+                </div>
               )}
 
               {!item.cancelled && !item.payment && !item.isCompleted && (

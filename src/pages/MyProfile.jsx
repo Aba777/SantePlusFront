@@ -8,6 +8,12 @@ const MyProfile = () => {
   const { userData, setUserData, token, backendUrl, loadUserProfileData } = useContext(AppContext);
   const [isEdit, setIsEdit] = useState(false);
   const [image, setImage] = useState(false);
+  const [showPasswordFields, setShowPasswordFields] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
 
   const updateUserProfileData = async () => {
     try {
@@ -38,6 +44,44 @@ const MyProfile = () => {
     } catch (error) {
       console.log(error);
       toast.error(error.message);
+    }
+  };
+
+  const updatePassword = async () => {
+    try {
+      if (passwordData.newPassword !== passwordData.confirmPassword) {
+        toast.error("Les mots de passe ne correspondent pas");
+        return;
+      }
+
+      if (passwordData.newPassword.length < 6) {
+        toast.error("Le mot de passe doit contenir au moins 6 caractères");
+        return;
+      }
+
+      const { data } = await axios.post(
+        backendUrl + "/api/user/update-password",
+        {
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword
+        },
+        { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+      );
+
+      if (data.success) {
+        toast.success("Mot de passe mis à jour avec succès");
+        setShowPasswordFields(false);
+        setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        });
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Erreur lors de la mise à jour du mot de passe");
+      console.error(error);
     }
   };
 
@@ -177,6 +221,75 @@ const MyProfile = () => {
                   )}
                 </div>
               </div>
+            </div>
+
+            {/* CHANGEMENT DE MOT DE PASSE */}
+            <div className="border-t pt-6">
+              <div className="flex items-center justify-between mb-4">
+                <label className="text-lg font-medium text-gray-700">Sécurité</label>
+                <button
+                  onClick={() => setShowPasswordFields(!showPasswordFields)}
+                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                >
+                  {showPasswordFields ? 'Annuler' : 'Changer le mot de passe'}
+                </button>
+              </div>
+              
+              {showPasswordFields && (
+                <div className="space-y-4 bg-gray-50 p-4 rounded-lg">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-2">Mot de passe actuel</label>
+                    <input
+                      type="password"
+                      value={passwordData.currentPassword}
+                      onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                      className="w-full bg-white p-3 rounded border border-gray-300 focus:border-primary focus:outline-none"
+                      placeholder="Votre mot de passe actuel"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-2">Nouveau mot de passe</label>
+                    <input
+                      type="password"
+                      value={passwordData.newPassword}
+                      onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                      className="w-full bg-white p-3 rounded border border-gray-300 focus:border-primary focus:outline-none"
+                      placeholder="Nouveau mot de passe (min. 6 caractères)"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-2">Confirmer le nouveau mot de passe</label>
+                    <input
+                      type="password"
+                      value={passwordData.confirmPassword}
+                      onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                      className="w-full bg-white p-3 rounded border border-gray-300 focus:border-primary focus:outline-none"
+                      placeholder="Confirmer le nouveau mot de passe"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={updatePassword}
+                      className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
+                    >
+                      Mettre à jour le mot de passe
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowPasswordFields(false);
+                        setPasswordData({
+                          currentPassword: '',
+                          newPassword: '',
+                          confirmPassword: ''
+                        });
+                      }}
+                      className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition-colors"
+                    >
+                      Annuler
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="text-center">

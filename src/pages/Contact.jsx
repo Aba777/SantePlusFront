@@ -37,7 +37,7 @@ const Contact = () => {
             </div>
             <div>
               <p className="font-semibold text-zinc-800">Adresse</p>
-              <p>Hippodrome Rue 428, Bamako, Mali</p>
+              <p>Bacodjicoroni ACI Rue 428, Bamako, Mali</p>
             </div>
           </div>
 

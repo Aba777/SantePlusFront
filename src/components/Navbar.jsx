@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect, useRef } from "react";
+import { useState, useContext, useEffect, useRef } from "react";
 import { assets } from "../assets/assets";
 import { NavLink, useNavigate } from "react-router-dom";
 import { AppContext } from "../context/context";
@@ -7,13 +7,8 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
-  const { token, setToken, userData } = useContext(AppContext);
+  const { token, userData, logout } = useContext(AppContext);
   const dropdownRef = useRef();
-
-  const logout = () => {
-    setToken(false);
-    localStorage.removeItem("token");
-  };
 
   const toggleDropdown = () => {
     setShowDropdown((prev) => !prev);
@@ -58,6 +53,7 @@ const Navbar = () => {
           <div
             ref={dropdownRef}
             className="relative flex items-center gap-2 cursor-pointer"
+            onClick={toggleDropdown}
           >
             <img
               className="w-9 h-9 rounded-full object-cover border-2 border-indigo-500 shadow"
@@ -67,7 +63,6 @@ const Navbar = () => {
                   : assets.default_profile
               }
               alt="Profil"
-              onClick={toggleDropdown}
             />
             <img
               className={`w-3 transition-transform ${
@@ -75,7 +70,6 @@ const Navbar = () => {
               }`}
               src={assets.dropdown_icon}
               alt="Dropdown"
-              onClick={toggleDropdown}
             />
 
             {showDropdown && (

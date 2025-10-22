@@ -1,6 +1,6 @@
-import React, { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { AppContext } from "../context/Context";
+import { AppContext } from "../context/context";
 import { assets } from "../assets/assets";
 import { toast } from "react-toastify";
 import axios from "axios";
@@ -28,6 +28,7 @@ const Appointments = () => {
     if (!docInfo || !docInfo.slots_booked) return;
     setDocSlot([]);
 
+    let now = new Date();
     let today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -38,42 +39,66 @@ const Appointments = () => {
       let endTime = new Date(currentDate);
       endTime.setHours(23, 0, 0, 0);
 
-      if (today.getDate() === currentDate.getDate()) {
-        currentDate.setHours(
-          currentDate.getHours() > 10 ? currentDate.getHours() + 1 : 10
-        );
-        currentDate.setMinutes(currentDate.getMinutes() > 30 ? 30 : 0);
-      } else {
-        currentDate.setHours(10);
-        currentDate.setMinutes(0);
+      // Commencer à 10h pour tous les jours
+      let startTime = new Date(currentDate);
+      startTime.setHours(10, 0, 0, 0);
+
+      // Si c'est aujourd'hui, commencer après l'heure actuelle
+      if (i === 0 && now.getHours() >= 10) {
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
+        
+        // Arrondir à la prochaine demi-heure
+        if (currentMinute > 30) {
+          startTime.setHours(currentHour + 1, 0, 0, 0);
+        } else if (currentMinute > 0) {
+          startTime.setHours(currentHour, 30, 0, 0);
+        } else {
+          startTime.setHours(currentHour, 0, 0, 0);
+        }
       }
 
       let timeSlots = [];
-      while (currentDate < endTime) {
-        let formattedTime = currentDate.toLocaleTimeString([], {
+      let availableSlots = [];
+      
+      // Générer tous les créneaux pour le jour (disponibles et occupés)
+      let slotTime = new Date(startTime);
+      
+      while (slotTime < endTime) {
+        let formattedTime = slotTime.toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
         });
 
-        let day = currentDate.getDate();
-        let month = currentDate.getMonth() + 1;
-        let year = currentDate.getFullYear();
+        let day = slotTime.getDate();
+        let month = slotTime.getMonth() + 1;
+        let year = slotTime.getFullYear();
         const slotDate = `${day}_${month}_${year}`;
 
+        // Vérifier si le créneau est passé
+        const isPast = slotTime <= now;
+        
         // Vérifier si le créneau est déjà réservé
-        const isSlotTaken =
-          docInfo.slots_booked[slotDate]?.includes(formattedTime);
+        const isSlotTaken = docInfo.slots_booked[slotDate]?.includes(formattedTime);
 
-        if (!isSlotTaken) {
-          timeSlots.push({
-            datetime: new Date(currentDate),
-            time: formattedTime,
-          });
+        const slotInfo = {
+          datetime: new Date(slotTime),
+          time: formattedTime,
+          isTaken: isSlotTaken,
+          isPast: isPast,
+          isAvailable: !isSlotTaken && !isPast
+        };
+
+        timeSlots.push(slotInfo);
+        
+        if (slotInfo.isAvailable) {
+          availableSlots.push(slotInfo);
         }
 
-        currentDate.setMinutes(currentDate.getMinutes() + 30);
+        slotTime.setMinutes(slotTime.getMinutes() + 30);
       }
 
+      // Si il y a des créneaux (disponibles ou non), on ajoute le jour
       if (timeSlots.length > 0) {
         setDocSlot((prev) => [...prev, timeSlots]);
       }
@@ -91,8 +116,20 @@ const Appointments = () => {
       return;
     }
 
+    if (!slotTime) {
+      toast.error("Veuillez sélectionner un créneau horaire.");
+      return;
+    }
+
+    // Vérifier si le créneau sélectionné est toujours available
+    const selectedSlot = docSlot[slotIndex]?.find(slot => slot.time === slotTime);
+    if (!selectedSlot || !selectedSlot.isAvailable) {
+      toast.error("Ce créneau n'est plus disponible.");
+      return;
+    }
+
     try {
-      const date = docSlot[slotIndex][0].datetime;
+      const date = selectedSlot.datetime;
 
       let day = date.getDate();
       let month = date.getMonth() + 1;
@@ -113,6 +150,8 @@ const Appointments = () => {
       if (data.success) {
         toast.success("Rendez-vous pris avec succès");
         getDoctorsData();
+        
+        
         navigate("/mes-rendez-vous");
       } else {
         toast.error(data.message);
@@ -185,15 +224,26 @@ const Appointments = () => {
           </div>
           <div className="flex items-center gap-3 w-full overflow-x-scroll mt-4">
             {docSlot.length &&
-              docSlot[slotIndex].map((item, index) => (
+              docSlot[slotIndex]
+                .filter(item => !item.isPast) // Masquer les créneaux passés
+                .map((item, index) => (
                 <p
-                  onClick={() => setSlotTime(item.time)}
+                  onClick={() => {
+                    if (item.isAvailable) {
+                      setSlotTime(item.time);
+                    }
+                  }}
                   key={index}
-                  className={`text-sm font-light flex-shrink-0 px-5 py-2 rounded-full cursor-pointer ${
-                    item.time === slotTime
-                      ? "bg-primary text-white"
-                      : "text-gray-400 border border-gray-300"
+                  className={`text-sm font-light flex-shrink-0 px-5 py-2 rounded-full ${
+                    item.isTaken
+                      ? "text-gray-300 bg-gray-100 border border-gray-200 cursor-not-allowed"
+                      : item.time === slotTime
+                      ? "bg-primary text-white cursor-pointer"
+                      : item.isAvailable
+                      ? "text-gray-400 border border-gray-300 cursor-pointer hover:border-primary hover:text-primary"
+                      : "text-gray-300 bg-gray-100 border border-gray-200 cursor-not-allowed"
                   }`}
+                  title={item.isTaken ? "Créneau occupé" : item.isPast ? "Créneau passé" : "Disponible"}
                 >
                   {item.time.toLowerCase()}
                 </p>
